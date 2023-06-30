@@ -26,6 +26,7 @@ pnpm i
 pnpm link --global
 mkdir project;cd project
 pnpm init; pnpm pkg set type="module"; 
+pnpm link @bitstillery/dotbuild --global
 pnpm dotbuild boilerplate
 pnpm dotbuild dev
 ```
