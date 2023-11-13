@@ -1,9 +1,15 @@
 import path from 'path'
-import {esbuild, devServer, fs, glob, watch, Scss, template} from '@bitstillery/dotbuild'
+import {esbuild, solidPlugin, devServer, fs, glob, watch, Scss, template, Translator} from '@bitstillery/dotbuild'
 
-export function loadTasks({settings, Task}) {    
+export async function loadTasks({settings, Task}) {    
     const tasks = {}
     const scss = Scss(settings)
+    const translator = new Translator(settings)
+    await translator.updateCache()
+    const authKey = process.env.DOTBUILD_TRANSLATOR_KEY
+    if (authKey) {
+        await translator.initDeepl()
+    }
     let esbuildInstance
 
     tasks.assets = new Task('assets', async function() {
@@ -31,7 +37,7 @@ export function loadTasks({settings, Task}) {
         await fs.rm(settings.dir.build, {force: true, recursive: true})
     })
 
-    tasks.dev = new Task('dev', async function({minify = false, metafile = false, port = 9001, sourceMap = true} = {}) {
+    tasks.dev = new Task('dev', async function({language, minify = false, metafile = false, port = 9001, sourceMap = true} = {}) {
         await tasks.build.start({incremental: true, metafile, minify, sourceMap})
 
         const {app, proxy, runner} = devServer(settings, tasks)
@@ -48,15 +54,16 @@ export function loadTasks({settings, Task}) {
             path.join(settings.dir.assets, 'fonts', '**'),
         ]).on('change', runner.assets)
 
-        watch([path.join(settings.dir.base, 'index.html')]).on('change', runner.html)
+        watch([path.join(settings.dir.code, 'index.html')]).on('change', runner.html)
 
         watch([
-            path.join(settings.dir.code, '**', '*.js'),
-            path.join(settings.dir.code, '**', '*.jsx'),
+            path.join(settings.dir.code, '**', '*.ts'),
+            path.join(settings.dir.code, '**', '*.tsx'),
         ]).on('change', runner.code)
 
-        watch([path.join(settings.dir.theme, '**', '*.scss')]).on('change', runner.stylesApp)
-        watch([path.join(settings.dir.components, '**', '*.scss')]).on('change', runner.stylesComponents)
+        watch([path.join(settings.dir.code, 'i18n', 'src.json')]).on('change', runner.i18n)
+        watch([path.join(settings.dir.code, 'scss', '*.scss')]).on('change', runner.styles.app)
+        watch([path.join(settings.dir.components, '**', '*.scss')]).on('change', runner.styles.components)
     })
 
     tasks.html = new Task('html', async function() {
@@ -64,6 +71,19 @@ export function loadTasks({settings, Task}) {
         const html = template(indexFile)({settings})
         await fs.writeFile(path.join(settings.dir.build, 'index.html'), html)
         return {size: html.length}
+    })
+
+    tasks.i18n = new Task('i18n', async function({overwrite = false}) {
+        let results = await Promise.all(settings.languages.map((language) => {
+            return translator.translate(this, language, overwrite)
+        }))
+
+        translator.collectStats(this, results)
+        await translator.updateCache()
+    })
+
+    tasks.i18nGlossary = new Task('i18n-glossary', async function() {
+        await translator.updateGlossaries(this)
     })
 
     tasks.code = new Task('code', async function({incremental = false, minify = false, metafile = false, sourceMap = false} = {}) {
@@ -75,13 +95,14 @@ export function loadTasks({settings, Task}) {
                         NODE_ENV: process.env.NODE_ENV ? process.env.NODE_ENV : 'development',
                     }),                    
                 },
-                entryPoints: [path.join(settings.dir.code, 'app.js')],
+                entryPoints: [path.join(settings.dir.code, 'app.ts')],
                 external: ['*.jpg', '*.png', '*.woff2'],
                 format: 'iife',
-                jsxFactory: 'h',
+                jsxImportSource: "voby",
                 metafile,
                 minify,
                 outfile: path.join(settings.dir.build, `app.${settings.buildId}.js`),
+                plugins: [solidPlugin()],
                 resolveExtensions: ['.ts', '.tsx', '.js'],
                 sourcemap: sourceMap,
                 splitting: false,
@@ -100,29 +121,29 @@ export function loadTasks({settings, Task}) {
 
     tasks.styles = new Task('styles', async function({minify = false, sourceMap = false} = {}) {
         const actions = [
-            stylesApp.start({minify, sourceMap}),
-            stylesComponents.start({minify, sourceMap}),
+            tasks.stylesApp.start({minify, sourceMap}),
+            tasks.stylesComponents.start({minify, sourceMap}),
         ]
 
         const res = await Promise.all(actions)
         return {size: res.reduce((total, num) => total + num)}
     })
 
-    const stylesApp = new Task('styles:app', async function({minify, sourceMap}) {
+    tasks.stylesApp = new Task('styles:app', async function({minify, sourceMap}) {
         let data = `@use "sass:color";@use "sass:math";`
-        data += await fs.readFile(path.join(settings.dir.code, 'scss', 'app.scss'), 'utf8')
+        data += await fs.readFile(path.join(settings.dir.code, 'scss', 'project.scss'), 'utf8')
         const styles = await scss({
             data,
-            file: 'scss/app.scss',
+            file: 'scss/project.scss',
             minify,
-            outFile:  path.join(settings.dir.build, `app.${settings.buildId}.css`),
+            outFile:  path.join(settings.dir.build, `project.${settings.buildId}.css`),
             sourceMap,
         })
 
         return {size: styles.length}
     })
 
-    const stylesComponents = new Task('styles:components', async function({minify, sourceMap}) {
+    tasks.stylesComponents = new Task('styles:components', async function({minify, sourceMap}) {
         let data = `@use "sass:color";@use "sass:math";`
         data += '@import "variables";'
         const componentFiles = await glob(`${path.join(settings.dir.components, '**', '*.scss')}`)

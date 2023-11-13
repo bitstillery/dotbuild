@@ -1,0 +1,37 @@
+.c-app {
+    display: flex;
+    height: 100%;
+    width: 100%;
+
+    .panel {
+        background: $grey-3;
+        max-width: 150px;
+        flex: 1;
+        transition: all 0.4s ease;
+
+        &.collapsed {
+            max-width: 0;
+        }
+        
+    }
+
+    .view-layout {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+
+    
+        .bar-main {
+            background: $grey-6;
+            display: flex;
+            height: $spacer-4;
+            gap: $spacer-1;
+            width: 100%;
+        }
+
+        .view {
+            background: $grey-5;
+            flex: 1;
+        }
+    }
+}

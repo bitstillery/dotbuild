@@ -1,0 +1,32 @@
+{
+    "compilerOptions": {
+        "allowImportingTsExtensions": true,
+        "baseUrl": "./",
+        "esModuleInterop": true,
+        "lib": [
+            "DOM",
+            "DOM.Iterable",
+            "ES2022"            
+        ],
+        "jsx": "react",
+        "jsxImportSource": "voby",
+        "moduleResolution": "bundler",
+        "noEmit": true,
+        "paths": {
+            "@/*": ["./src/*"]
+        }, 
+        "sourceMap": true,
+        "target": "ES2022",
+        
+        "typeRoots": ["node_modules/@types"],
+    },
+    "include": [
+        "./src"
+    ],
+    "ts-node": {
+        "esm": true,
+        "skipIgnore": true,
+        "swc": true,
+        "transpileOnly": true
+    }
+  }

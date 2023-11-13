@@ -1,32 +1,39 @@
 # Dotbuild
 
-Dotbuild is a simple task-based developer toolchain for frontend devs who 
-care about configuration by code, simplicitity and conventions where convenient. It is 
-slightly inspired by the old Gulp taskrunner, but just runs Promise-based tasks without 
-the streams paradigm. It utilizes developer tools like [esbuild](https://esbuild.github.io/) 
-and [sass](https://sass-lang.com/), trying to reuse existing tools where possible, and use 
-the Platform™ where feasible.
+Dotbuild is a simple opinionated async task-based frontend toolchain to build 
+new efficient frontend applications with. It uses the following tools:
 
-## New project
-
-```bash
-pnpm i @bitstillery/dotbuild --global
-mkdir project;cd project
-pnpm init; pnpm pkg set type="module"; 
-pnpm dotbuild boilerplate
-pnpm dotbuild dev
-```
+* [Esbuild](https://esbuild.github.io/) - Efficient bundler for TS/TSX
+* [Sass](https://sass-lang.com/) - For organized & structured stylesheets
 
 ## Development
+This project is still in its infancy. Do you want to try Dotbuild yourself? Use 
+this workflow. The *New project* workflow is not finished yet.
 
 ```bash
-git@github.com:bitstillery/dotbuild.git
+git clone git@github.com:bitstillery/dotbuild.git
 cd dotbuild
 pnpm i
 pnpm link --global
 mkdir project;cd project
 pnpm init; pnpm pkg set type="module"; 
 pnpm link @bitstillery/dotbuild --global
-pnpm dotbuild boilerplate
-pnpm dotbuild dev
+dotbuild boilerplate
+dotbuild dev
+# Open localhost:3000
+```
+
+## New project
+
+### SolidJS
+This is a project starter for SolidJS:
+
+* [SolidJS](https://github.com/solidjs/solid) - JSX Frontend framework
+* [Solid Router](https://docs.solidjs.com/guides/how-to-guides/routing-in-solid/solid-router) - Routing for SolidJS 
+* [I18next](https://www.i18next.com/) - Internationalisation
+
+```bash
+pnpm i @bitstillery/dotbuild --global
+dotbuild boilerplate --template solidjs project
+dotbuild dev
 ```

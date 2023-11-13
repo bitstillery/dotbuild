@@ -1,0 +1,23 @@
+{
+  "name": "project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@bitstillery/dotbuild": "^1.0.0",
+    "@solidjs/router": "^0.9.1",
+    "classnames": "^2.3.2",
+    "eventemitter3": "^5.0.1",
+    "i18next": "^23.2.11",
+    "solid-js": "^1.8.5",
+    "voby": "^0.54.0",
+    "voby-router": "^0.2.0"
+  }
+}

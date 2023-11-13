@@ -13,6 +13,7 @@ export default async(argv) => {
             dotbuild: path.resolve(path.join(path.dirname(new URL(import.meta.url).pathname))),
             workspace: path.resolve(process.cwd()),
         },
+        languages: ['de', 'en-GB', 'es', 'nl', 'fr', 'it'],
         minify: argv.minify,
         package: argv.package,
         sourceMap: argv.sourceMap,
@@ -25,6 +26,7 @@ export default async(argv) => {
         settings.dir.build = path.resolve(path.join(settings.dir.base, `.build`))
     }
     settings.dir.code = path.resolve(path.join(settings.dir.base, 'src'))
+    settings.dir.i18n = path.resolve(path.join(settings.dir.code, 'i18n'))
 
     settings.dir.assets = path.resolve(path.join(settings.dir.code, `assets`))    
     settings.dir.theme = path.resolve(path.join(settings.dir.base, `theme`))

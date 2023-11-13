@@ -3,6 +3,7 @@ import _glob from 'glob'
 import bodyParser from 'body-parser'
 import chokidar from 'chokidar'
 import esbuild from 'esbuild'
+import {solidPlugin} from 'esbuild-plugin-solid'
 import express from 'express'
 import fs from 'fs-extra'
 import httpProxy from 'http-proxy'
@@ -11,11 +12,12 @@ import tinylr from 'tiny-lr'
 import util from 'util'
 const glob = util.promisify(_glob)
 
-export {Scss} from './utils.js'
+export {Scss, Translator} from './utils.js'
 export {glob}
 export const watch = chokidar.watch
 export const template = _.template
 export {esbuild}
+export {solidPlugin}
 export {fs}
 
 export const devServer = function(settings, tasks) {
@@ -35,34 +37,40 @@ export const devServer = function(settings, tasks) {
     })
 
     const debounce = {options: {trailing: true}, wait: 1000}
-    const assets = _.throttle(async() => {
-        await tasks.assets.start()
-        tinylr.changed('index.html')
-    }, debounce.wait, debounce.options)
 
-    const html = _.throttle(async() => {
-        await tasks.html.start({minify: false})
-        tinylr.changed('index.html')
-    }, debounce.wait, debounce.options)
+    const runner = {
+        assets: _.throttle(async() => {
+            await tasks.assets.start()
+            tinylr.changed('index.html')
+        }, debounce.wait, debounce.options),
+        code: _.throttle(async() => {
+            await tasks.code.start({incremental: true, metafile: false, minify: false, sourceMap: true})
+            tinylr.changed(`app.${settings.buildId}.js`)
+        }, debounce.wait, debounce.options),
+        html: _.throttle(async() => {
+            await tasks.html.start({minify: false})
+            tinylr.changed('index.html')
+        }, debounce.wait, debounce.options),
+        i18n: _.throttle(async() => {
+            await tasks.i18n.start({overwrite: false})
+            await tasks.code.start({incremental: true, metafile: false, minify: false, sourceMap: true})
+            tinylr.changed('index.html')
+        }, debounce.wait, debounce.options),
+        styles: {
+            app: _.throttle(async() => {
+                await Promise.all([
+                    tasks.stylesApp.start({minify: false, sourceMap: true}),
+                    tasks.stylesComponents.start({minify: false, sourceMap: true}),
+                ])
+                tinylr.changed(`app.${settings.buildId}.css`)
+                tinylr.changed(`components.${settings.buildId}.css`)
+            }, debounce.wait, debounce.options),
+            components: _.throttle(async() => {
+                await tasks.stylesComponents.start({minify: false, sourceMap: true})
+                tinylr.changed(`components.${settings.buildId}.css`)
+            }, debounce.wait, debounce.options)
+        }
+    }
 
-    const code = _.throttle(async() => {
-        await tasks.code.start({incremental: true, metafile: false, minify: false, sourceMap: true})
-        tinylr.changed(`app.${settings.buildId}.js`)
-    }, debounce.wait, debounce.options)
-
-    const stylesApp = _.throttle(async() => {
-        await Promise.all([
-            tasks.stylesApp.start({minify: false, sourceMap: true}),
-            tasks.stylesComponents.start({minify: false, sourceMap: true}),
-        ])
-        tinylr.changed(`app.${settings.buildId}.css`)
-        tinylr.changed(`components.${settings.buildId}.css`)
-    }, debounce.wait, debounce.options)
-
-    const stylesComponents = _.throttle(async() => {
-        await tasks.stylesComponents.start({minify: false, sourceMap: true})
-        tinylr.changed(`components.${settings.buildId}.css`)
-    }, debounce.wait, debounce.options)
-
-    return {app, proxy, runner: {assets, html, code, stylesApp, stylesComponents}}
+    return {app, proxy, runner}
 }

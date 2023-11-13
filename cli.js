@@ -60,7 +60,7 @@ let settings
 
             const tasks = await import(path.join(settings.dir.workspace, 'tasks.js'))
             const Task = getTask(settings)
-            cli.tasks = tasks.loadTasks({settings, Task})
+            cli.tasks = await tasks.loadTasks({settings, Task})
 
             // Make sure that the cache & build directories exist,
             // before executing any task.
@@ -107,6 +107,12 @@ let settings
         })
         .command('html', 'build html file', () => {}, (argv) => {
             cli.tasks.html.start(argv)
+        })
+        .command('i18n', 'translate locales using Deepl', () => {}, (argv) => {
+            cli.tasks.i18n.start(argv)
+        })
+        .command('i18n-glossary', 'Update Deepl glossaries', () => {}, (argv) => {
+            cli.tasks.i18nGlossary.start(argv)
         })
         .command('styles', 'bundle styles', () => {}, (argv) => {
             cli.tasks.styles.start(argv)

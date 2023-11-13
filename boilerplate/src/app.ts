@@ -1,4 +1,4 @@
-import {render} from 'solid-js/web'
+import { render } from 'solid-js/web'
 import {AppWrapper} from '@/components'
 import i18next from 'i18next'
 import Logger from './lib/logger.js'
